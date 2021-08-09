@@ -1,0 +1,15 @@
+[Unit]
+Description=drcom spider
+After=default.target
+# https://medium.com/@benmorel/creating-a-linux-service-with-systemd-611b5c8b91d6
+StartLimitIntervalSec=0
+# StartLimitIntervalSec 0永远重启，n>0代表尝试n秒后放弃.
+
+[Service]
+Type=simple
+ExecStart=%h/.local/bin/drcom.sh
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=default.target
