@@ -18,12 +18,9 @@ APs_192="SZU_WLAN"
 APs_172="SZU_NewFi"
 #APs_172="SZU_NewFi:xxxxx"
 
-# connect to 192
-Eth_MASKs_192="24"
-
-# connect to 172
-Eth_MASKs_172="24"
-#MASKs_172="24:xx:xx"
+# SZU_Eth mask
+# Cannot distinguish which site should I log in by mask 
+Eth_MASKs="24"
 
 drcom_login(){
     # Usage: drcom_login 0MKKey login_url
@@ -32,8 +29,21 @@ drcom_login(){
     # pinginfo='' # for test
     #empty when not connected
     if [ -z "$pinginfo" ]; then
-	/usr/bin/curl -d "DDDDD=$CARDID" -d "upass=$PASSWORD" -d "0MKKey=$1" "$2" #> /dev/null 2>& 1
-	#echo a
+	if [ -n "$1" ];then
+	    # $1 $2 were assigned
+	    /usr/bin/curl -d "DDDDD=$CARDID" -d "upass=$PASSWORD" -d "0MKKey=$1" "$2" > /dev/null 2>& 1
+	    #echo a
+	else
+	    # default, used for ethernet connection
+	    # $1 $2 were empty, ping drcom.szu.edu.cn first if not connect to 172
+	    pinginfo=$(ping -c 1 -W 1 drcom.szu.edu.cn |grep " 0% packet loss")
+	    if [ -n "$pinginfo" ]; then
+		# drcom ping successful
+		/usr/bin/curl -d "DDDDD=$CARDID" -d "upass=$PASSWORD" -d "0MKKey=123456" "https://drcom.szu.edu.cn" > /dev/null 2>& 1
+	    else
+		/usr/bin/curl -d "DDDDD=$CARDID" -d "upass=$PASSWORD" -d "%B5%C7%A1%A1%C2%BC" "http://172.30.255.2/a30.htm" > /dev/null 2>& 1
+	    fi
+	fi
     fi
 }
 
@@ -79,12 +89,10 @@ do
 	fi
     done < <(echo "$APNOWs" | tr ':' '\n')
 
+
     while read MASKNOW; do
-	if [[ ":$MASKNOW:" =~ :"$Eth_MASKs_192": ]]; then
-	    drcom_login "123456" "http://192.168.255.235/a70.htm"
-	    continue
-	elif [[ ":$MASKNOW:" =~ :"$Eth_MASKs_172": ]]; then
-	    drcom_login "%B5%C7%A1%A1%C2%BC" "http://172.30.255.2/a30.htm"
+	if [[ ":$MASKNOW:" =~ :"$Eth_MASKs": ]]; then
+	    drcom_login
 	    continue
 	fi
     done < <(echo "$Eth_MASKNOWs" | tr ':' '\n')

@@ -2,5 +2,7 @@
 
 systemctl --user disable drcom.service --now
 rm $HOME/.config/systemd/user/drcom.service
-rmdir -p $HOME/.local/bin
+rm $HOME/.local/bin/drcom.sh
+
 rmdir -p $HOME/.config/systemd/user
+rmdir -p $HOME/.local/bin
