@@ -3,24 +3,32 @@
 CARDID='xxxxxx'
 PASSWORD='xxxxxx'
 
-AP_ADP1='wlp5s0'
-AP_ADP2='wlan0'
+# sepreate with colon :
 
-Eth_ADP1='enp4s0'
-Eth_ADP2='eth0'
+AP_ADPs='wlp5s0:wlan0'
+
+Eth_ADPs='enp4s0:eth0'
+
 
 # connect to 192
-AP_SZU_WLAN="SZU_WLAN"
+APs_192="SZU_WLAN"
+#APs_192="SZU_WLAN:xxxxxx"
 
 # connect to 172
-AP_SZU_NewFi="SZU_NewFi"
+APs_172="SZU_NewFi"
+#APs_172="SZU_NewFi:xxxxx"
+
+# connect to 192
+Eth_MASKs_192="24"
 
 # connect to 172
-MASKDORMITORY="24"
+Eth_MASKs_172="24"
+#MASKs_172="24:xx:xx"
 
 drcom_login(){
     # Usage: drcom_login 0MKKey login_url
     pinginfo=$(ping -c 1 -W 1 baidu.com |grep " 0% packet loss")
+
     # pinginfo='' # for test
     #empty when not connected
     if [ -z "$pinginfo" ]; then
@@ -32,37 +40,52 @@ drcom_login(){
 
 while true
 do
-    APNOW1=$(iw dev $AP_ADP1 info 2> /dev/null |sed -n 's/\tssid\ \(.*\)/\1/p')
-    APNOW2=$(iw dev $AP_ADP2 info 2> /dev/null |sed -n 's/\tssid\ \(.*\)/\1/p')
-    APNOW="$APNOW1:$APNOW2"
-    #APNOW="$APNOW1:$APNOW2:$APNOW3" .etc
-    # Remove matching prefix pattern.
-    APNOW=${APNOW%%:*}
-    # Remove matching suffix pattern.
-    APNOW=${APNOW##:*}
-    # man bash ${parameter#word}
+    sleep 5
 
-    Eth_MASKNOW1=$(ip -br -4 addr show dev $Eth_ADP1 2> /dev/null |awk '{print $3}'|awk -F "/" '{print $2}')
-    Eth_MASKNOW2=$(ip -br -4 addr show dev $Eth_ADP2 2> /dev/null |awk '{print $3}'|awk -F "/" '{print $2}')
-    Eth_MASKNOW="$Eth_MASKNOW1:$Eth_MASKNOW2"
-    Eth_MASKNOW=${Eth_MASKNOW%%:*}
-    Eth_MASKNOW=${Eth_MASKNOW##:*}
+    APNOWs=""
+    while read AP_ADP; do
+	APNOWs="$APNOWs:$(iw dev $AP_ADP info 2> /dev/null |sed -n 's/\tssid\ \(.*\)/\1/p')"
+    done < <(echo "$AP_ADPs" | tr ':' '\n')
+    # Remove matching prefix pattern.
+    APNOWs=${APNOWs%%:}
+    # Remove matching suffix pattern.
+    APNOWs=${APNOWs##:}
+    # man bash ${parameter#word}
+    #echo $APNOWs
+
+    Eth_MASKNOWs=""
+    while read Eth_ADP; do
+	Eth_MASKNOWs="$Eth_MASKNOWs:$(ip -br -4 addr show dev $Eth_ADP 2> /dev/null |awk '{print $3}'|awk -F "/" '{print $2}')"
+    done < <(echo "$Eth_ADPs" | tr ':' '\n')
+    Eth_MASKNOWs=${Eth_MASKNOWs%%:}
+    Eth_MASKNOWs=${Eth_MASKNOWs##:}
+    #echo $Eth_MASKNOWs
 
 
     # The two ifs are classified according to the login url
     # connect to 192
-    if [[ ":$AP_SZU_WLAN:" =~ :"$APNOW": ]]; then # APNOW contains WLAN_SZU ; 
-	# same as  [[ ":$AP_SZU_WLAN:" =~ .*:"$APNOW":.* ]]
-	drcom_login "123456" "http://192.168.255.235/a70.htm"
-	# drcom_login "123456" "http://drcom.szu.edu.cn/a70.htm"
-	continue
-    fi
+    # https://stackoverflow.com/questions/27702452/loop-through-a-comma-separated-shell-variable
 
-    # connect to 172
-    if [[ ":$AP_SZU_NewFi:" =~ :"$APNOW": ]] ||
-	[[ ":$MASKDORMITORY:" =~ :"$Eth_MASKNOW": ]]; then
+    while read APNOW; do
+	#echo line="$APNOW";
+	if [[ ":$APs_192:" =~ :"$APNOW": ]]; then # APNOW in $AP_192 ; ref: /etc/profile append_path()
+	    # same as  [[ ":$APs_192:" =~ .*:"$APNOW":.* ]]
+	    drcom_login "123456" "http://192.168.255.235/a70.htm"
+	    # drcom_login "123456" "http://drcom.szu.edu.cn/a70.htm"
+	    continue
+	elif [[ ":$APs_172:" =~ :"$APNOW": ]]; then
 	    drcom_login "%B5%C7%A1%A1%C2%BC" "http://172.30.255.2/a30.htm"
 	    continue
-    fi
-    sleep 5
+	fi
+    done < <(echo "$APNOWs" | tr ':' '\n')
+
+    while read MASKNOW; do
+	if [[ ":$MASKNOW:" =~ :"$Eth_MASKs_192": ]]; then
+	    drcom_login "123456" "http://192.168.255.235/a70.htm"
+	    continue
+	elif [[ ":$MASKNOW:" =~ :"$Eth_MASKs_172": ]]; then
+	    drcom_login "%B5%C7%A1%A1%C2%BC" "http://172.30.255.2/a30.htm"
+	    continue
+	fi
+    done < <(echo "$Eth_MASKNOWs" | tr ':' '\n')
 done
