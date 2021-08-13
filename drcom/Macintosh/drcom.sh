@@ -19,12 +19,14 @@ Eth_ADPs=${Eth_ADPs%%:}
 # Remove matching suffix pattern.
 Eth_ADPs=${Eth_ADPs##:}
 
-# connect to 192
+# connect to "drcom.szu.edu.cn"
 APs_192="SZU_WLAN"
+# sepreate with colon :
 #APs_192="SZU_WLAN:xxxxxx"
 
-# connect to 172
+# connect to "172.30.255.2/a30.htm"
 APs_172="SZU_NewFi"
+# sepreate with colon :
 #APs_172="SZU_NewFi:xxxxx"
 
 # SZU_Eth mask
@@ -33,7 +35,7 @@ Eth_MASKs="255.255.255.0"
 
 drcom_login(){
     # Usage: drcom_login 0MKKey login_url
-    pinginfo=$(ping -c 1 -W 1 baidu.com |grep " 0% packet loss")
+    pinginfo="$(ping -c 1 -W 1 baidu.com |grep " 0% packet loss")"
 
     # pinginfo='' # for test
     #empty when not connected
@@ -62,54 +64,54 @@ while true
 do
     sleep 5
 
-    APNOWs=""
+    APs_NOW=""
     #while read AP_ADP; do
-    #    APNOWs="$APNOWs:$(/System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport -I |sed -n 's/ \{11\}SSID: \(.*\)/\1/p')"
-    #    #APNOWs="$APNOWs:$(iw dev $AP_ADP info 2> /dev/null |sed -n 's/\tssid\ \(.*\)/\1/p')"
-    #    #echo $APNOWs
+    #    APs_NOW="$APs_NOW:$(/System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport -I |sed -n 's/ \{11\}SSID: \(.*\)/\1/p')"
+    #    #APs_NOW="$APs_NOW:$(iw dev $AP_ADP info 2> /dev/null |sed -n 's/\tssid\ \(.*\)/\1/p')"
+    #    #echo $APs_NOW
     #done < <(echo "$AP_ADPs" | tr ':' '\n')
-    APNOWs="$APNOWs:$(/System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport -I |sed -n 's/ \{11\}SSID: \(.*\)/\1/p')"
+    APs_NOW="$APs_NOW:$(/System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport -I |sed -n 's/ \{11\}SSID: \(.*\)/\1/p')"
     # Remove matching prefix pattern.
-    APNOWs=${APNOWs%%:}
+    APs_NOW=${APs_NOW%%:}
     # Remove matching suffix pattern.
-    APNOWs=${APNOWs##:}
+    APs_NOW=${APs_NOW##:}
     # man bash ${parameter#word}
-    #echo $APNOWs
+    #echo $APs_NOW
 
-    Eth_MASKNOWs=""
+    Eth_MASKs_NOW=""
     while read Eth_ADP; do
-	Eth_MASKNOWs="$Eth_MASKNOWs:$( ipconfig getoption $Eth_ADP subnet_mask )"
+	Eth_MASKs_NOW="$Eth_MASKs_NOW:$( ipconfig getoption $Eth_ADP subnet_mask )"
     done < <(echo "$Eth_ADPs" | tr ':' '\n')
-    Eth_MASKNOWs=${Eth_MASKNOWs%%:}
-    Eth_MASKNOWs=${Eth_MASKNOWs##:}
-    #echo $Eth_MASKNOWs
+    Eth_MASKs_NOW=${Eth_MASKs_NOW%%:}
+    Eth_MASKs_NOW=${Eth_MASKs_NOW##:}
+    #echo $Eth_MASKs_NOW
 
 
     # The two ifs are classified according to the login url
-    # connect to 192
+    # connect to "drcom.szu.edu.cn"
     # https://stackoverflow.com/questions/27702452/loop-through-a-comma-separated-shell-variable
 
-    while read APNOW; do
-	#echo line="$APNOW";
-	if [[ ":$APs_192:" =~ :"$APNOW": ]]; then # APNOW in $AP_192 ; ref: /etc/profile append_path()
-	    # same as  [[ ":$APs_192:" =~ .*:"$APNOW":.* ]]
+    while read AP_NOW; do
+	#echo line="$AP_NOW";
+	if [[ ":$APs_192:" =~ :"$AP_NOW": ]]; then # AP_NOW in $AP_192 ; ref: /etc/profile append_path()
+	    # same as  [[ ":$APs_192:" =~ .*:"$AP_NOW":.* ]]
 	    #echo 1
 	    drcom_login "123456" "http://192.168.255.235/a70.htm"
 	    # drcom_login "123456" "http://drcom.szu.edu.cn/a70.htm"
 	    continue
-	elif [[ ":$APs_172:" =~ :"$APNOW": ]]; then
+	elif [[ ":$APs_172:" =~ :"$AP_NOW": ]]; then
 	    #echo 2
 	    drcom_login "%B5%C7%A1%A1%C2%BC" "http://172.30.255.2/a30.htm"
 	    continue
 	fi
-    done < <(echo "$APNOWs" | tr ':' '\n')
+    done < <(echo "$APs_NOW" | tr ':' '\n')
 
 
-    while read MASKNOW; do
-	if [[ ":$MASKNOW:" =~ :"$Eth_MASKs": ]]; then
+    while read MASK_NOW; do
+	if [[ ":$MASK_NOW:" =~ :"$Eth_MASKs": ]]; then
 	    echo 0
 	    drcom_login
 	    continue
 	fi
-    done < <(echo "$Eth_MASKNOWs" | tr ':' '\n')
+    done < <(echo "$Eth_MASKs_NOW" | tr ':' '\n')
 done
