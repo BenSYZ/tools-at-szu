@@ -28,7 +28,6 @@ GATEWAY_MACs_192="xx:xx:xx:xx:xx:xx"
 # sepreate with space
 #GATEWAY_MAC_192="xx:xx:xx:xx:xx:xx xx:xx:xx:xx:xx:xx"
 
-# SZU_Eth mask
 # modify the following line with the mac address of the Ethernet router which needs to log in with "172.30.255.2/a30.htm"
 GATEWAY_MACs_172="xx:xx:xx:xx:xx:xx"
 # sepreate with space
@@ -38,9 +37,12 @@ get_router_mac(){
     # sep with space
     GATEWAY_MACs_NOW=""
     while read ETH_ADP; do
-	GATEWAY_MACs_NOW="$GATEWAY_MACs_NOW $(arp -i "$ETH_ADP" |awk 'NR>=2 {print $3}' | tr '\n' ' ')"
+	GATEWAY_IP_NOW="$(ip -4 route list |grep "$ETH_ADP" | grep default |cut -d ' ' -f 3)"
+	if [ -n "$GATEWAY_IP_NOW" ];then
+	    GATEWAY_MACs_NOW="$GATEWAY_MACs_NOW $(ip neigh | grep "$GATEWAY_IP_NOW" |awk '{print $5}')"
+	fi
     done < <(echo "$ETH_ADPs" | tr ':' '\n')
-    GATEWAY_MACs_NOW="$(echo $GATEWAY_MACs_NOW|xargs)"
+    GATEWAY_MACs_NOW="$(echo $GATEWAY_MACs_NOW|xargs)" # removing the prefix and suffix space
     echo "$GATEWAY_MACs_NOW"
 }
 
@@ -71,19 +73,24 @@ main(){
 	# sep with space
 	GATEWAY_MACs_NOW=""
 	while read ETH_ADP; do
-	    GATEWAY_MACs_NOW="$GATEWAY_MACs_NOW $(arp -i "$ETH_ADP" |awk 'NR>=2 {print $3}')"
+	    GATEWAY_IP_NOW="$(ip -4 route list |grep "$ETH_ADP" | grep default |cut -d ' ' -f 3)"
+	    if [ -n "$GATEWAY_IP_NOW" ];then
+		GATEWAY_MACs_NOW="$GATEWAY_MACs_NOW $(ip neigh | grep "$GATEWAY_IP_NOW" |awk '{print $5}')"
+	    fi
 	done < <(echo "$ETH_ADPs" | tr ':' '\n')
-	GATEWAY_MACs_NOW="$(echo $GATEWAY_MACs_NOW|xargs)"
-	#echo $GATEWAY_MACs_NOW
+	GATEWAY_MACs_NOW="$(echo $GATEWAY_MACs_NOW|xargs)" # removing the prefix and suffix space
+	#echo "$GATEWAY_MACs_NOW"
 
 	# login
 	while read AP_NOW; do
 	    #echo line="$AP_NOW";
 	    if [[ ":$APs_192:" =~ :"$AP_NOW": ]]; then # AP_NOW in $AP_192 ; ref: /etc/profile append_path()
 		# same as  [[ ":$APs_192:" =~ .*:"$AP_NOW":.* ]]
+		#echo 1
 		drcom_login "123456" "https://drcom.szu.edu.cn/a70.htm"
 		continue 2
 	    elif [[ ":$APs_172:" =~ :"$AP_NOW": ]]; then
+		#echo 2
 		drcom_login "%B5%C7%A1%A1%C2%BC" "http://172.30.255.2/a30.htm"
 		continue 2
 	    fi
@@ -100,9 +107,10 @@ main(){
 		#echo 172
 		continue 2
 	    fi
-	done < <(echo "$GATEWAY_MACs_NOW") #MAC are seperated with space
+	done < <(echo "$GATEWAY_MACs_NOW"| tr ' ' '\n')
+
     done
 }
 
-#get_router_mac
-main
+get_router_mac
+#main
