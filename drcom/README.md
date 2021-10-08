@@ -67,30 +67,30 @@ curl -d "DDDDD=245235" -d "upass=tsaeitonsr" -d "0MKKey=%B5%C7%A1%A1%C2%BC" http
 
 
 ## 自动登录
-我们也发现每次点这个脚本就会有个黑框，那能不能连上校园网自动执行呢？
+断网了就要重新去点运行脚本好麻烦，那能不能连上校园网断网自动重连呢？
 
 思路是：
 * WIFI:
 1. 获取当前连着的 WIFI 的名字
-2. 如果那个需要登录的WIFI名，包含在当前连着的 WIFI 里，就尝试ping 百度
+2. 如果那个需要登录的WIFI名，包含在当前连着的 WIFI 里（分172和192），就尝试ping baidu.com
 3. 如果ping不通，就用curl登录
 
 * 以太网：
-1. 比较Mac和预存是否一样
-2. 如果一样，则尝试ping drcom.szu.edu.cn
-3. 可以ping通就发送表单到 `https://drcom.szu.edu.cn`
-4. 不能ping通就发送表单到 `http://172.30.255.2/a30.html`
-
-(不是很好，如果你有好的思路，欢迎在评论留言哦ToDo，可能不行，drcom可能一直ping得通，windows脚本是之前的方式，但可以跑，懒得改了)
+1. 比较网关的 mac 地址 (分172和192) 和预存是否一样
+2. 如果一样，则尝试ping baidu.com
+3. 如果ping不通，就用curl登录
 
 我已经将它写好了，放在原文链接。
 * 一般情况把卡号和密码改上，运行一下install就可以了，如果有问题欢迎留言和提issue。
+* 需要修改 `drcom.cmd`/`drcom.sh` 里的卡号、密码、以太网的设备名和 mac 地址，保存后然后运行install
 * WIFI名称不一定非得是SZU_WLAN, SZU_NewFi，可以加上自己的路由器的WIFI名，这样打开电脑，连上这个WIFI，也会尝试登录的。
 * 如果是别的学校的同学可能需要自己修改一下内容啦
 
-需要注意的是：如果你在宿舍跑着这个脚本，就不能在食堂用手机登录啦，会自动踢下线的，教学区和宿舍区没关系的。
+需要注意的是：如果你在宿舍跑着这个脚本，就不能在食堂用手机登录啦，会自动踢下线的，但是教学区和宿舍区是分开的（192 和 172 是分开的）。
 
 ### Windows
+Install 后相关文件：
+
 ```
 C:\Users\%username%\drcom\drcom_autologin\
 C:\Users\%username%\drcom\drcom_autologin\drcom.sh
@@ -101,19 +101,31 @@ C:\Users\%username%\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startu
 用`vbs`启动 `cmd`，发送这个`vbs`的快捷方式到开机启动的目录，就可以实现开机自启动了。
 
 ### Linux
+Install 后相关文件：
+
 ```
 ~/.local/bin/drcom.sh
 ~/.config/systemd/user/drcom.service
 ```
+
 
 通过`systemd`，在用户登录时启动脚本，
 
 但要注意的是 **用户级别的** `systemd`在没登录的时候是不会启动的，我之前把树莓派上的service从系统级别换成用户级别，每次重启后连上树莓派的热点后都要登录，脚本好像失效了，但登录到树莓派上，又能上网了，让我很是困惑。
 
 ### Mac
+Install 后相关文件：
+
 ```
 ~/.local/bin/drcom.sh
 ~/Library/LaunchAgents/com.drcom.app.plist
+```
+
+### Requirements
+* `iproute2mac`
+
+```sh
+brew install iproute2mac
 ```
 
 通过`launchctl`，来实现自动启动脚本。
