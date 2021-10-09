@@ -40,6 +40,8 @@ ETH_GATEWAY_MACs_172="xx:xx:xx:xx:xx:xx"
 # sepreate with SPACE
 #ETH_GATEWAY_MACs_172="xx:xx:xx:xx:xx:xx xx:xx:xx:xx:xx:xx"
 
+# get the mac address of gateway by uncomment the last `get_router_mac`
+
 
 
 get_router_mac(){
@@ -121,10 +123,10 @@ main(){
 		continue 2
 	    fi
 	done < <(echo "$ETH_GATEWAY_MACs_NOW"| tr ' ' '\n') #MAC are seperated with return
-
 	# ========================== ethernet END ================================
-
+	sleep 5
     done
 }
+
 #get_router_mac
 main
